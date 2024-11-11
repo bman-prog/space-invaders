@@ -1,9 +1,7 @@
-let numCols = 0
+namespace SpriteKind {
+    export const enemy_bullet = SpriteKind.create()
+}
 function alienMovefunc () {
-    moveAliens()
-    moveAliensHoriz()
-    movealiensdown()
-    calcNextAlienMove()
     alienMoveVar()
 }
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -33,22 +31,6 @@ function spawnBullet () {
         bullet.setPosition(Hero.x, Hero.y - 5)
         bullet.setVelocity(0, -200)
         hasFired = true
-    }
-}
-function moveAliens () {
-    Sprite_List = sprites.allOfKind(SpriteKind.Enemy)
-    AliensMoveDown = 0
-    for (let index = 0; index <= numCols; index++) {
-        if (index < Sprite_List.length) {
-            if (aliensMoveleft == 1 && Sprite_List[index].x <= alienShiftamt) {
-                AliensMoveDown = 1
-            } else if (aliensMoveleft == 0 && Sprite_List[index].x >= scene.screenWidth() - alienShiftamt) {
-                AliensMoveDown = 1
-            }
-        }
-    }
-    if (AliensMoveDown == 1) {
-        aliensMoveleft = 1
     }
 }
 function spawnEnemies (Xpos: number, Ypos: number) {
@@ -192,21 +174,40 @@ function spawnEnemies (Xpos: number, Ypos: number) {
         )
     }
 }
-function moveAliensHoriz () {
-    for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
-        let alienDelta = 0
-        value.y += alienDelta
-    }
+sprites.onOverlap(SpriteKind.enemy_bullet, SpriteKind.Player, function (sprite, otherSprite) {
+    sprites.destroy(otherSprite)
+    sprites.destroy(sprite)
+    info.changeLifeBy(-1)
+    otherSprite.startEffect(effects.spray)
+})
+function spawnEnemyBullet () {
+    enemyBullet = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . 2 1 2 . . . . . . 
+        . . . . . . . 2 1 2 . . . . . . 
+        . . . . . . . 2 1 2 . . . . . . 
+        . . . . . . . 3 1 3 . . . . . . 
+        . . . . . . 2 3 1 3 2 . . . . . 
+        . . . . . . 2 1 1 1 2 . . . . . 
+        . . . . . . 2 1 1 1 3 . . . . . 
+        . . . . . . 3 1 1 1 3 . . . . . 
+        . . . . . . 3 1 1 1 3 . . . . . 
+        . . . . . . 3 1 1 1 3 . . . . . 
+        . . . . . . 2 3 1 3 2 . . . . . 
+        . . . . . . . 2 2 2 . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.enemy_bullet)
+    enemyBullet.setScale(0.5, ScaleAnchor.Middle)
+    random = randint(0, sprites.allOfKind(SpriteKind.Enemy).length - 1)
+    chosenSprite = sprites.allOfKind(SpriteKind.Enemy)[random]
+    enemyBullet.setPosition(chosenSprite.x, chosenSprite.y - 5)
+    enemyBullet.setVelocity(0, 100)
 }
-function calcNextAlienMove () {
-    let currAlienPause = 0
-    nextAlienMove = game.runtime() + currAlienPause
-}
-function movealiensdown () {
-    for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
-        value.y += alienShiftamt
-    }
-}
+info.onLifeZero(function () {
+    game.gameOver(false)
+})
 function alienMoveVar () {
     alienShiftamt = 4
 }
@@ -233,18 +234,18 @@ function spawnHero () {
     Hero.setPosition(76, 109)
     controller.moveSprite(Hero, 100, 0)
     Hero.setStayInScreen(true)
+    info.setLife(3)
 }
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
     sprites.destroy(otherSprite)
     sprites.destroy(sprite)
 })
-let nextAlienMove = 0
+let alienShiftamt = 0
+let chosenSprite: Sprite = null
+let random = 0
+let enemyBullet: Sprite = null
 let Enemy_1: Sprite = null
 let Xpos = 0
-let alienShiftamt = 0
-let aliensMoveleft = 0
-let AliensMoveDown = 0
-let Sprite_List: Sprite[] = []
 let Hero: Sprite = null
 let bullet: Sprite = null
 let hasFired = false
@@ -377,4 +378,7 @@ spawnEnemies(13, 49)
 alienMovefunc()
 game.onUpdateInterval(1000, function () {
     hasFired = false
+})
+game.onUpdateInterval(1000, function () {
+    spawnEnemyBullet()
 })
